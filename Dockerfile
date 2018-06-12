@@ -9,5 +9,6 @@ RUN go test ./...
 RUN go build -o /storebror
 
 FROM alpine
+RUN apk add --no-cache git
 COPY --from=build /storebror /storebror
-CMD ["/storebror"]
+ENTRYPOINT ["/storebror"]
