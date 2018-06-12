@@ -1,7 +1,9 @@
 package main
 
-import "fmt"
+import (
+	flag "github.com/spf13/pflag"
+)
 
 func main() {
-	fmt.Println("storebror: hello world")
+	flag.Parse()
 }
