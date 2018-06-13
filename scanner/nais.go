@@ -1,6 +1,9 @@
 package scanner
 
-import yaml "gopkg.in/yaml.v2"
+import (
+	nais "github.com/nais/naisd/api"
+	yaml "gopkg.in/yaml.v2"
+)
 
 type Result struct {
 	err error
@@ -8,10 +11,10 @@ type Result struct {
 
 type Yaml map[interface{}]interface{}
 
-func ParseYaml(data []byte) (Yaml, error) {
-	m := make(Yaml)
-	err := yaml.Unmarshal(data, &m)
-	return m, err
+func ParseYaml(data []byte) (nais.NaisManifest, error) {
+	manifest := nais.NaisManifest{}
+	err := yaml.Unmarshal(data, &manifest)
+	return manifest, err
 }
 
 func AppConfig(yml string) Result {
