@@ -6,43 +6,51 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"strings"
 
 	flag "github.com/spf13/pflag"
 )
 
-var (
-	repository *string = flag.String("repository", "", "foo")
-)
-
 func checkout(repository, destination string) error {
 	cmd := exec.Command("git", "clone", "--depth", "1", repository, destination)
+	log.Printf("Running '%s'...\n", strings.Join(cmd.Args, " "))
 	bytes, err := cmd.CombinedOutput()
 	if err != nil {
-		fmt.Printf(string(bytes))
+		lines := strings.Split(string(bytes), "\n")
+		for _, line := range lines {
+			log.Printf("git: %s", line)
+		}
 	}
 	return err
 }
 
-func run() error {
+func run(repository string) error {
+	if len(repository) == 0 {
+		return fmt.Errorf("missing repository URL.")
+	}
+
 	dir, err := ioutil.TempDir("", "storebror")
-	log.Printf("Creating temporary directory at %s\n", dir)
 	if err != nil {
-		return err
+		return fmt.Errorf("while creating temporary directory at '%s': %s", dir, err)
 	}
 	defer os.RemoveAll(dir) // clean up
 
-	log.Printf("Checking out %s...\n", *repository)
-	err = checkout(*repository, dir)
+	log.Printf("Checking out '%s' to '%s'...\n", repository, dir)
+	err = checkout(repository, dir)
+	if err != nil {
+		return fmt.Errorf("while checking out repository: %s", err)
+	}
 
-	return err
+	return nil
 }
 
 func main() {
 	flag.Parse()
-	err := run()
+	repository := flag.Arg(0)
+	err := run(repository)
 	if err == nil {
 		return
 	}
-	fmt.Println(err)
+	log.Printf("Error: %s\n", err)
 	os.Exit(1)
 }
