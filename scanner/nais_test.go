@@ -9,13 +9,13 @@ import (
 )
 
 func TestFoo(t *testing.T) {
-	t.Run("Parse nais manifest from a YAML file", func(t *testing.T) {
+	t.Run("Parse YAML file correctly", func(t *testing.T) {
 		data, err := ioutil.ReadFile("fixtures/app-config/base.yml")
 		if err != nil {
 			t.Fatalf("fixture is missing")
 		}
-		manifest, err := scanner.ParseYaml(data)
-		assert.Equal(t, "foo", manifest.Image)
-		assert.Equal(t, true, manifest.Prometheus.Enabled)
+		yml, err := scanner.ParseYaml(data)
+		assert.Equal(t, "foo", yml["image"])
+		assert.Equal(t, true, yml["prometheus"].(scanner.Yaml)["enabled"])
 	})
 }
