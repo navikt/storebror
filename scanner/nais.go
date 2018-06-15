@@ -3,14 +3,19 @@ package scanner
 import (
 	"fmt"
 	"io/ioutil"
+	"os"
+	"path"
 	"strings"
 
 	yaml "gopkg.in/yaml.v2"
 )
 
 type Result struct {
-	err error
+	Description string
+	Err         error
 }
+
+type ResultSet []Result
 
 type Transformer func(Yaml) Yaml
 
@@ -38,6 +43,15 @@ func ParseYamlFile(filename string) (Yaml, error) {
 	return ParseYaml(data)
 }
 
+// WriteYamlFile writes a Yaml structure to a file.
+func WriteYamlFile(yml Yaml, filename string) error {
+	data, err := yaml.Marshal(yml)
+	if err != nil {
+		return err
+	}
+	return ioutil.WriteFile(filename, data, 0)
+}
+
 // ParseYaml parses a byte stream and returns a Yaml structure.
 func ParseYaml(data []byte) (Yaml, error) {
 	m := make(Yaml)
@@ -57,7 +71,9 @@ prometheus:
 	return ParseYaml([]byte(data))
 }
 
-func InsertPrometheus(src Yaml) Yaml {
+// InsertPrometheusConfig inserts a valid Prometheus configuration section into
+// an existing Yaml structure.
+func InsertPrometheusConfig(src Yaml) Yaml {
 	name := shortImageName(src["image"].(string))
 	result := make(Yaml)
 	merge(result, src)
@@ -66,6 +82,61 @@ func InsertPrometheus(src Yaml) Yaml {
 	return result
 }
 
-func AppConfig(yml string) Result {
-	return Result{}
+// HasValidPrometheusConfig returns true if the Yaml structure has
+// .prometheus.enabled: true.
+func HasValidPrometheusConfig(src Yaml) bool {
+	return false
+	if _, ok := src["prometheus"]; !ok {
+		return false
+	}
+	metricsEnabled := src["prometheus"].(Yaml)["enabled"]
+	switch x := metricsEnabled.(type) {
+	case bool:
+		return x
+	default:
+		return false
+	}
+}
+
+// ProcessFile checks if a file has the required Prometheus configuration, and
+// writes additional config back to the file if needed.
+func ProcessFile(path string) *Result {
+	src, err := ParseYamlFile(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return &Result{Err: err}
+	}
+	if HasValidPrometheusConfig(src) {
+		return nil
+	}
+	dest := InsertPrometheusConfig(src)
+	err = WriteYamlFile(dest, path)
+	return &Result{"add Prometheus configuration section", err}
+}
+
+// Process runs ProcessFile on all the eligible files in the repository.
+func Process(repository string) ResultSet {
+	results := make([]Result, 0)
+	for _, file := range []string{"app-config.yaml", "app-config-sbs.yaml", "app-config-fss.yaml"} {
+		path := path.Join(repository, file)
+		result := ProcessFile(path)
+		if result == nil {
+			continue
+		}
+		result.Description = fmt.Sprintf("%s: %s", file, result.Description)
+		results = append(results, *result)
+	}
+	return results
+}
+
+// Description returns a newline-delimited collection of descriptions in the
+// result set.
+func (rs ResultSet) Description() string {
+	ds := make([]string, len(rs))
+	for i, d := range rs {
+		ds[i] = d.Description
+	}
+	return strings.TrimSpace(strings.Join(ds, "\n"))
 }

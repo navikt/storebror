@@ -31,7 +31,7 @@ func TestPrometheus(t *testing.T) {
 		assert.Nil(t, err)
 		expected, err := scanner.ParseYamlFile("fixtures/app-config/prometheus.output.yml")
 		assert.Nil(t, err)
-		dst := scanner.InsertPrometheus(src)
+		dst := scanner.InsertPrometheusConfig(src)
 		assert.Equal(t, expected, dst)
 	})
 }
