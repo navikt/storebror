@@ -85,7 +85,6 @@ func InsertPrometheusConfig(src Yaml) Yaml {
 // HasValidPrometheusConfig returns true if the Yaml structure has
 // .prometheus.enabled: true.
 func HasValidPrometheusConfig(src Yaml) bool {
-	return false
 	if _, ok := src["prometheus"]; !ok {
 		return false
 	}
