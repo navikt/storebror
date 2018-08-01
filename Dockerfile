@@ -1,6 +1,7 @@
 FROM golang:alpine AS build
-RUN apk add --no-cache git
-RUN wget https://github.com/golang/dep/releases/download/v0.4.1/dep-linux-amd64 -O /usr/bin/dep && chmod 755 /usr/bin/dep
+RUN apk add --no-cache git && \
+    wget https://github.com/golang/dep/releases/download/v0.4.1/dep-linux-amd64 -O /usr/bin/dep && \
+    chmod 755 /usr/bin/dep
 ENV D=/go/src/github.com/navikt/storebror
 ADD . $D
 WORKDIR $D
